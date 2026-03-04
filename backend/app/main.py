@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from starlette.staticfiles import StaticFiles
+
 from dotenv import load_dotenv
 from pathlib import Path
 

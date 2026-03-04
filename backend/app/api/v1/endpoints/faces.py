@@ -49,6 +49,12 @@ async def register_face(request: Request, name: str = Form(...), file: UploadFil
     np_arr = np.frombuffer(read_image, np.uint8)
     buffered_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
+    # 얼굴 감지
+    detected_faces = face_service.detect(buffered_image)
+
+    if len(detected_faces) == 0:
+        raise HTTPException(status_code=400, detail="감지된 얼굴이 없습니다.")
+
     # 이미지 저장
     file_extension = file.filename.split(".")[-1]
     file_name = f"{uuid4()}.{file_extension}"
@@ -56,12 +62,6 @@ async def register_face(request: Request, name: str = Form(...), file: UploadFil
 
     with open(file_path, "wb") as buffer:
         buffer.write(read_image)
-
-    # 얼굴 감지
-    detected_faces = face_service.detect(buffered_image)
-
-    if len(detected_faces) == 0:
-        raise HTTPException(status_code=400, detail="감지된 얼굴이 없습니다.")
 
     # db 저장
     detected_face = detected_faces[0]
@@ -82,8 +82,6 @@ async def register_face(request: Request, name: str = Form(...), file: UploadFil
 
 @router.patch("/{face_id}")
 async def update_face(request:Request, face_id:int, body: Optional[dict] = Body(None), db: Session = Depends(get_db)):
-    print(face_id, body)
-
     name = body.get('name')
     stmt = select(Face).where(Face.id == face_id)
     face = db.execute(stmt).scalars().first()
@@ -112,28 +110,11 @@ async def face(request: Request, face_id, db: Session = Depends(get_db)):
 async def delete_face(face_id:int, db: Session = Depends(get_db)):
     stmt = select(Face).where(Face.id == face_id)
     face = db.execute(stmt).scalars().first()
+
+    # 파일 삭제
+    image_path = face.image_path
+    os.remove(image_path)
+
     db.delete(face)
     db.commit()
     return {"id": face.id, "name": face.name}
-
-@router.post("/identify")
-async def identify(request: Request, body: Optional[dict], db: Session = Depends(get_db)):
-    embedding = np.array(body.get("embedding"))
-
-    stmt = select(Face)
-    faces = db.execute(stmt).scalars().all()
-
-    max_similarity = -1.0
-
-    for face in faces:
-        dot_product = np.dot(face.embedding, embedding)
-        norm_a = np.linalg.norm(face.embedding)
-        norm_b = np.linalg.norm(embedding)
-        similarity = dot_product / (norm_a * norm_b)
-
-        if similarity > max_similarity:
-            max_similarity = similarity
-            best_face_name = face.name
-
-    threshold = 0.5
-    return { "name": best_face_name if max_similarity > threshold else "Unknown"}
