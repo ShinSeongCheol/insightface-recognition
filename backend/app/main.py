@@ -3,6 +3,13 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from starlette.staticfiles import StaticFiles
+from dotenv import load_dotenv
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+env_path = BASE_DIR / ".env"
+
+load_dotenv(dotenv_path= env_path, verbose=True)
 
 from app.api.v1.api import api_router
 from app.services.camera_service import CameraService
