@@ -1,0 +1,139 @@
+import os
+from typing import Optional, List
+
+import cv2
+import numpy as np
+
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, Depends, status
+from fastapi.params import Body
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+from app.db.session import get_db
+from app.models.face import Face
+from uuid import uuid4
+
+UPLOAD_DIR = "static/uploads/faces"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+router = APIRouter()
+
+@router.get("/")
+async def faces(request: Request, db: Session = Depends(get_db)):
+    stmt = select(Face)
+    result = db.execute(stmt)
+    faces = result.scalars().all()
+
+    data = [
+        {
+            "id": face.id,
+            "name": face.name,
+            "image_path": face.image_path,
+            "has_embedding": face.embedding is not None,
+            "normalized_embedding": face.normalized_embedding,
+            "created_at": face.created_at.isoformat() if face.created_at else None,
+            "updated_at": face.updated_at.isoformat() if face.updated_at else None,
+        }
+        for face in faces
+    ]
+
+    return {"faces": data, "count": len(faces)}
+
+@router.post("/")
+async def register_face(request: Request, name: str = Form(...), file: UploadFile = File(...), db: Session = Depends(get_db)):
+    # 서비스 가져오기
+    face_service = request.app.state.face_service
+
+    # 이미지 변환
+    read_image = await file.read()
+    np_arr = np.frombuffer(read_image, np.uint8)
+    buffered_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+    # 이미지 저장
+    file_extension = file.filename.split(".")[-1]
+    file_name = f"{uuid4()}.{file_extension}"
+    file_path = os.path.join(UPLOAD_DIR, file_name)
+
+    with open(file_path, "wb") as buffer:
+        buffer.write(read_image)
+
+    # 얼굴 감지
+    detected_faces = face_service.detect(buffered_image)
+
+    if len(detected_faces) == 0:
+        raise HTTPException(status_code=400, detail="감지된 얼굴이 없습니다.")
+
+    # db 저장
+    detected_face = detected_faces[0]
+    embedding = detected_face.embedding
+    normalized_embedding = np.linalg.norm(embedding).item()
+
+    face = Face(name=name, image_path=file_path, embedding=embedding, normalized_embedding=normalized_embedding)
+
+    try:
+        db.add(face)
+        db.commit()
+        db.refresh(face)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"이미 '{name}'이라는 이름으로 등록된 얼굴 정보가 있습니다.")
+
+    return {"id": face.id, "name": face.name, "embedding": embedding.tolist(), "normalized_embedding": face.normalized_embedding}
+
+@router.patch("/{face_id}")
+async def update_face(request:Request, face_id:int, body: Optional[dict] = Body(None), db: Session = Depends(get_db)):
+    print(face_id, body)
+
+    name = body.get('name')
+    stmt = select(Face).where(Face.id == face_id)
+    face = db.execute(stmt).scalars().first()
+    face.name = name
+
+    try:
+        db.add(face)
+        db.commit()
+        db.refresh(face)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"이미 '{name}'이라는 이름으로 등록된 얼굴 정보가 있습니다.")
+
+    return {"id": face.id, "name": face.name, "embedding": face.embedding.tolist(), "normalized_embedding": face.normalized_embedding}
+
+@router.get("/{face_id}")
+async def face(request: Request, face_id, db: Session = Depends(get_db)):
+    stmt = select(Face).where(Face.id == face_id)
+    face = db.execute(stmt).scalars().first()
+    if face is None:
+        raise HTTPException(status_code=404, detail="등록된 얼굴이 없습니다.")
+
+    return {"id": face.id, "name": face.name, "image_path": face.image_path, "created_at": face.created_at.isoformat() if face.created_at else None}
+
+@router.delete("/{face_id}")
+async def delete_face(face_id:int, db: Session = Depends(get_db)):
+    stmt = select(Face).where(Face.id == face_id)
+    face = db.execute(stmt).scalars().first()
+    db.delete(face)
+    db.commit()
+    return {"id": face.id, "name": face.name}
+
+@router.post("/identify")
+async def identify(request: Request, body: Optional[dict], db: Session = Depends(get_db)):
+    embedding = np.array(body.get("embedding"))
+
+    stmt = select(Face)
+    faces = db.execute(stmt).scalars().all()
+
+    max_similarity = -1.0
+
+    for face in faces:
+        dot_product = np.dot(face.embedding, embedding)
+        norm_a = np.linalg.norm(face.embedding)
+        norm_b = np.linalg.norm(embedding)
+        similarity = dot_product / (norm_a * norm_b)
+
+        if similarity > max_similarity:
+            max_similarity = similarity
+            best_face_name = face.name
+
+    threshold = 0.5
+    return { "name": best_face_name if max_similarity > threshold else "Unknown"}
