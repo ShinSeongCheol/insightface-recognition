@@ -14,7 +14,7 @@ load_dotenv(dotenv_path= env_path, verbose=True)
 
 from app.api.v1.api import api_router
 from app.services.camera_service import CameraService
-from services.face_service import FaceService
+from services.insightface_service import InsightfaceService
 from app.db.session import engine, Base
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -29,12 +29,12 @@ async def lifespan(app: FastAPI):
     app.state.camera_service = camera_service
 
     print("--- AI 모델(InsightFace) 로딩 시작 ---")
-    face_service = FaceService()
-    app.state.face_service = face_service
+    insightface_service = InsightfaceService()
+    app.state.insightface_service = insightface_service
 
     yield
     camera_service.stop()
-    del face_service
+    del insightface_service
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(api_router, prefix="/api/v1")

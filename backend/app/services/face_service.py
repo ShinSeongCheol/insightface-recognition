@@ -1,28 +1,50 @@
-import insightface
-import numpy as np
+from sqlalchemy.sql import select
+from app.models.face import Face
+from sqlalchemy.exc import IntegrityError
 
 class FaceService:
-    def __init__(self):
-        self.app = insightface.app.FaceAnalysis(name='buffalo_l', providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'])
-        self.app.prepare(ctx_id=0, det_size=(640, 640))
+    def __init__(self, db):
+        self.db = db
 
-    def detect(self, image):
-        detected_face = self.app.get(image)
-        return detected_face
+    def list_faces(self):
+        stmt = select(Face)
+        result = self.db.execute(stmt)
+        faces = result.scalars().all()
+        return faces
 
-    def analyze(self, face, stored_faces):
-        max_similarity = -1.0
-        detected_face = None
-        threshold = 0.4
+    def get_face(self, face_id):
+        stmt = select(Face).where(Face.id == face_id)
+        face = self.db.execute(stmt).scalars().first()
+        return face
 
-        for stored_face in stored_faces:
-            dot_product = np.dot(face.embedding, stored_face.embedding)
-            norm_a = np.linalg.norm(face.embedding)
-            norm_b = np.linalg.norm(stored_face.embedding)
-            similarity = dot_product / (norm_a * norm_b)
+    def post_face(self, name, image_path, embedding, normalized_embedding):
+        face = Face(name=name, image_path=image_path, embedding=embedding, normalized_embedding=normalized_embedding)
 
-            if similarity > max_similarity:
-                max_similarity = similarity
-                detected_face = stored_face
+        try:
+            self.db.add(face)
+            self.db.commit()
+            self.db.refresh(face)
+        except IntegrityError as e:
+            self.db.rollback()
+            raise e
 
-        return detected_face if max_similarity > threshold else None
+        return face
+
+    def patch_face(self, face_id, name):
+        stmt = select(Face).where(Face.id == face_id)
+        face = self.db.execute(stmt).scalars().first()
+        face.name = name
+
+        try:
+            self.db.add(face)
+            self.db.commit()
+            self.db.refresh(face)
+        except IntegrityError as e:
+            self.db.rollback()
+            raise e
+
+        return face
+
+    def delete_face(self, face: Face):
+        self.db.delete(face)
+        self.db.commit()

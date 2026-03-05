@@ -1,9 +1,12 @@
+import datetime
 from threading import Thread
-from PIL import Image, ImageDraw, ImageFont
-import os
 import cv2
 import numpy as np
+import time
 
+from app.services.insightface_service import InsightfaceService
+from app.utils.draw import draw_korean_text_bgr
+from app.utils.files import capture_image
 
 class CameraService:
     def __init__(self):
@@ -34,39 +37,63 @@ class CameraService:
 
         cap.release()
 
-    def draw_korean_text_bgr(
-            self,
-            bgr: np.ndarray,
-            text: str,
-            org: tuple[int, int],
-            font_path: str = "C:/Windows/Fonts/malgun.ttf",
-            font_size: int = 20,
-            color_bgr=(0, 0, 255),
-    ):
-        # 1) BGR -> RGB
-        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-        pil_img = Image.fromarray(rgb)
+    def generate_image(self, insightface_service: InsightfaceService):
+        target_fps = 10
+        interval = 1.0 / target_fps
+        capture_interval = 10
+        last_capture_time = time.time()
 
-        # 2) 폰트 로드(실패 시 대체 경로도 시도)
-        if not os.path.exists(font_path):
-            # 윈도우에서 대체 후보
-            for fp in ["C:/Windows/Fonts/malgun.ttf", "C:/Windows/Fonts/malgunbd.ttf", "C:/Windows/Fonts/gulim.ttc"]:
-                if os.path.exists(fp):
-                    font_path = fp
-                    break
+        while True:
+            t0 = time.time()
 
-        try:
-            font = ImageFont.truetype(font_path, font_size)
-        except Exception:
-            # 기본 폰트는 한글이 안 나올 수 있음
-            font = ImageFont.load_default()
+            frame: np.ndarray = self.read()
+            if frame is None:
+                time.sleep(0.05)
+                continue
 
-        draw = ImageDraw.Draw(pil_img)
+            detected_faces = insightface_service.detect(frame)  # 리스트라고 가정
+            result_frame = frame.copy()
 
-        # 3) PIL은 RGB 컬러
-        color_rgb = (color_bgr[2], color_bgr[1], color_bgr[0])
-        draw.text(org, text, font=font, fill=color_rgb)
+            for detected_face in detected_faces:
+                box = detected_face.bbox.astype(np.int32)
+                x1, y1, x2, y2 = map(int, box)
 
-        # 4) RGB -> BGR
-        out = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
-        return out
+
+                analyzed_face = insightface_service.analyze(detected_face)
+
+                tx, ty = x2 + 10, max(0, y1)
+                if analyzed_face is not None:
+                    best_name = analyzed_face.name
+                    cv2.rectangle(result_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    result_frame = draw_korean_text_bgr(bgr=result_frame, text=str(best_name), org=(tx, ty), font_size=50, color_bgr=(0,255,0))
+                else:
+                    best_name = "신원 미상"
+                    cv2.rectangle(result_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                    result_frame = draw_korean_text_bgr(bgr=result_frame, text=str(best_name), org=(tx, ty), font_size=50, color_bgr=(0,0,255))
+
+
+            ok, buffer = cv2.imencode(".jpg", result_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+
+            if not ok:
+                time.sleep(0.05)
+                continue
+
+            if len(detected_faces) > 0:
+                current_time = time.time()
+                elapsed_time = current_time - last_capture_time
+
+                if elapsed_time > capture_interval:
+                    capture_image(buffer)
+                    last_capture_time = current_time
+                    print(f"📸 {datetime.datetime.now()} 사진이 저장되었습니다! (간격: {capture_interval}초)")
+
+            yield (
+                    b"--frame\r\n"
+                    b"Content-Type: image/jpeg\r\n\r\n" + buffer.tobytes() + b"\r\n"
+            )
+
+            # FPS 제한
+            dt = time.time() - t0
+            sleep_time = interval - dt
+            if sleep_time > 0:
+                time.sleep(sleep_time)

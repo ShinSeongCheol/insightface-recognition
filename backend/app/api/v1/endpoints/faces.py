@@ -1,5 +1,5 @@
 import os
-from typing import Optional, List
+from typing import Optional
 
 import cv2
 import numpy as np
@@ -9,9 +9,11 @@ from fastapi.params import Body
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from app.db.session import get_db
+from app.db.session import async_get_db
 from app.models.face import Face
 from uuid import uuid4
+
+from app.services.face_service import FaceService
 
 UPLOAD_DIR = "static/uploads/faces"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -19,10 +21,9 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 router = APIRouter()
 
 @router.get("/")
-async def faces(request: Request, db: Session = Depends(get_db)):
-    stmt = select(Face)
-    result = db.execute(stmt)
-    faces = result.scalars().all()
+async def faces(db: Session = Depends(async_get_db)):
+    face_service = FaceService(db)
+    face_list = face_service.list_faces()
 
     data = [
         {
@@ -34,15 +35,16 @@ async def faces(request: Request, db: Session = Depends(get_db)):
             "created_at": face.created_at.isoformat() if face.created_at else None,
             "updated_at": face.updated_at.isoformat() if face.updated_at else None,
         }
-        for face in faces
+        for face in face_list
     ]
 
-    return {"faces": data, "count": len(faces)}
+    return {"faces": data}
 
 @router.post("/")
-async def register_face(request: Request, name: str = Form(...), file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def register_face(request: Request, name: str = Form(...), file: UploadFile = File(...), db: Session = Depends(async_get_db)):
     # 서비스 가져오기
-    face_service = request.app.state.face_service
+    insightface_service = request.app.state.insightface_service
+    face_service = FaceService(db)
 
     # 이미지 변환
     read_image = await file.read()
@@ -50,7 +52,7 @@ async def register_face(request: Request, name: str = Form(...), file: UploadFil
     buffered_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
     # 얼굴 감지
-    detected_faces = face_service.detect(buffered_image)
+    detected_faces = insightface_service.detect(buffered_image)
 
     if len(detected_faces) == 0:
         raise HTTPException(status_code=400, detail="감지된 얼굴이 없습니다.")
@@ -68,53 +70,44 @@ async def register_face(request: Request, name: str = Form(...), file: UploadFil
     embedding = detected_face.embedding
     normalized_embedding = np.linalg.norm(embedding).item()
 
-    face = Face(name=name, image_path=file_path, embedding=embedding, normalized_embedding=normalized_embedding)
-
     try:
-        db.add(face)
-        db.commit()
-        db.refresh(face)
+        face = face_service.post_face(name=name, image_path=file_path, embedding=embedding, normalized_embedding=normalized_embedding)
     except IntegrityError:
-        db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"이미 '{name}'이라는 이름으로 등록된 얼굴 정보가 있습니다.")
 
     return {"id": face.id, "name": face.name, "embedding": embedding.tolist(), "normalized_embedding": face.normalized_embedding}
 
 @router.patch("/{face_id}")
-async def update_face(request:Request, face_id:int, body: Optional[dict] = Body(None), db: Session = Depends(get_db)):
+async def update_face(face_id:int, body: Optional[dict] = Body(None), db: Session = Depends(async_get_db)):
     name = body.get('name')
-    stmt = select(Face).where(Face.id == face_id)
-    face = db.execute(stmt).scalars().first()
-    face.name = name
 
+    face_service = FaceService(db)
     try:
-        db.add(face)
-        db.commit()
-        db.refresh(face)
+        face = face_service.patch_face(face_id=face_id, name=name)
     except IntegrityError:
-        db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"이미 '{name}'이라는 이름으로 등록된 얼굴 정보가 있습니다.")
 
     return {"id": face.id, "name": face.name, "embedding": face.embedding.tolist(), "normalized_embedding": face.normalized_embedding}
 
 @router.get("/{face_id}")
-async def face(request: Request, face_id, db: Session = Depends(get_db)):
-    stmt = select(Face).where(Face.id == face_id)
-    face = db.execute(stmt).scalars().first()
+async def get_face(face_id, db: Session = Depends(async_get_db)):
+    face_service = FaceService(db)
+    face = face_service.get_face(face_id)
+
     if face is None:
         raise HTTPException(status_code=404, detail="등록된 얼굴이 없습니다.")
 
     return {"id": face.id, "name": face.name, "image_path": face.image_path, "created_at": face.created_at.isoformat() if face.created_at else None}
 
 @router.delete("/{face_id}")
-async def delete_face(face_id:int, db: Session = Depends(get_db)):
-    stmt = select(Face).where(Face.id == face_id)
-    face = db.execute(stmt).scalars().first()
+async def delete_face(face_id:int, db: Session = Depends(async_get_db)):
+    face_service = FaceService(db)
+    face = face_service.get_face(face_id)
 
     # 파일 삭제
     image_path = face.image_path
     os.remove(image_path)
 
-    db.delete(face)
-    db.commit()
+    face_service.delete_face(face)
+
     return {"id": face.id, "name": face.name}
