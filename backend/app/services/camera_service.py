@@ -4,6 +4,8 @@ import cv2
 import numpy as np
 import time
 
+from app.repositories.access_log_repository import AccessLogRepository
+from app.repositories.face_repository import FaceRepository
 from app.services.insightface_service import InsightfaceService
 from app.utils.draw import draw_korean_text_bgr
 from app.utils.files import capture_image
@@ -37,11 +39,19 @@ class CameraService:
 
         cap.release()
 
-    def generate_image(self, insightface_service: InsightfaceService, list_faces):
+    def generate_image(self, insightface_service: InsightfaceService, db):
         target_fps = 10
         interval = 1.0 / target_fps
         capture_interval = 10
         last_capture_time = time.time()
+
+        analyzed_face = None
+
+        # 등록된 얼굴 조회
+        face_repository = FaceRepository(db)
+        list_faces = face_repository.list_faces()
+
+        access_log_repository = AccessLogRepository(db)
 
         while True:
             t0 = time.time()
@@ -54,11 +64,12 @@ class CameraService:
             detected_faces = insightface_service.detect(frame)  # 리스트라고 가정
             result_frame = frame.copy()
 
+            # 박스 경계 표시
             for detected_face in detected_faces:
                 box = detected_face.bbox.astype(np.int32)
                 x1, y1, x2, y2 = map(int, box)
 
-
+                # 얼굴 분석
                 analyzed_face = insightface_service.analyze(detected_face, list_faces)
 
                 tx, ty = x2 + 10, max(0, y1)
@@ -78,12 +89,17 @@ class CameraService:
                 time.sleep(0.05)
                 continue
 
+            # 사진 저장
             if len(detected_faces) > 0:
                 current_time = time.time()
                 elapsed_time = current_time - last_capture_time
 
                 if elapsed_time > capture_interval:
-                    capture_image(buffer)
+                    saved_image_path = capture_image(buffer)
+
+                    face_id = analyzed_face.id if analyzed_face else None
+                    access_log_repository.save(face_id, str(saved_image_path))
+
                     last_capture_time = current_time
                     print(f"📸 {datetime.datetime.now()} 사진이 저장되었습니다! (간격: {capture_interval}초)")
 

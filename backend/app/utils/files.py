@@ -12,3 +12,5 @@ def capture_image(buffer: np.ndarray):
 
     with open(file_path, "wb") as f:
         f.write(buffer.tobytes())
+
+    return file_path
