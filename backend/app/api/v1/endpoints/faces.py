@@ -6,11 +6,9 @@ import numpy as np
 
 from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, Depends, status
 from fastapi.params import Body
-from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.db.session import async_get_db
-from app.models.face import Face
 from uuid import uuid4
 
 from app.services.face_service import FaceService

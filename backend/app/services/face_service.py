@@ -1,50 +1,28 @@
-from sqlalchemy.sql import select
 from app.models.face import Face
-from sqlalchemy.exc import IntegrityError
+
+from app.repositories.face_repository import FaceRepository
+
 
 class FaceService:
     def __init__(self, db):
         self.db = db
+        self.face_repository = FaceRepository(db)
 
     def list_faces(self):
-        stmt = select(Face)
-        result = self.db.execute(stmt)
-        faces = result.scalars().all()
+        faces = self.face_repository.list_faces()
         return faces
 
     def get_face(self, face_id):
-        stmt = select(Face).where(Face.id == face_id)
-        face = self.db.execute(stmt).scalars().first()
+        face = self.face_repository.get_face(face_id)
         return face
 
     def post_face(self, name, image_path, embedding, normalized_embedding):
-        face = Face(name=name, image_path=image_path, embedding=embedding, normalized_embedding=normalized_embedding)
-
-        try:
-            self.db.add(face)
-            self.db.commit()
-            self.db.refresh(face)
-        except IntegrityError as e:
-            self.db.rollback()
-            raise e
-
+        face = self.face_repository.post_face(name=name, image_path=image_path, embedding=embedding, normalized_embedding=normalized_embedding)
         return face
 
     def patch_face(self, face_id, name):
-        stmt = select(Face).where(Face.id == face_id)
-        face = self.db.execute(stmt).scalars().first()
-        face.name = name
-
-        try:
-            self.db.add(face)
-            self.db.commit()
-            self.db.refresh(face)
-        except IntegrityError as e:
-            self.db.rollback()
-            raise e
-
+        face = self.face_repository.patch_face(face_id, name)
         return face
 
     def delete_face(self, face: Face):
-        self.db.delete(face)
-        self.db.commit()
+        self.face_repository.delete_face(face)
