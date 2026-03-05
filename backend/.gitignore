@@ -1,3 +1,4 @@
 app/static/uploads
+app/static/captures
 .idea
 /.env
