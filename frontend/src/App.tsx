@@ -9,7 +9,6 @@ import FacePage from "@/pages/FacePage.tsx";
 const navItems = [
     { name: "홈", path: "/" },
     { name: "사용자 관리", path: "/faces" },
-    { name: "사용자 등록", path: "/register" },
 ];
 
 function NavLinks({pathname, onItemClick,}: {
@@ -116,7 +115,7 @@ function App() {
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/faces" element={<FacePage />} />
                     <Route path="/faces/:id" element={<FaceDetailPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/faces/new" element={<RegisterPage />} />
                 </Routes>
             </main>
         </div>
