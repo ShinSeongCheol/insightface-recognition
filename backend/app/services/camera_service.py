@@ -37,7 +37,7 @@ class CameraService:
 
         cap.release()
 
-    def generate_image(self, insightface_service: InsightfaceService):
+    def generate_image(self, insightface_service: InsightfaceService, list_faces):
         target_fps = 10
         interval = 1.0 / target_fps
         capture_interval = 10
@@ -59,7 +59,7 @@ class CameraService:
                 x1, y1, x2, y2 = map(int, box)
 
 
-                analyzed_face = insightface_service.analyze(detected_face)
+                analyzed_face = insightface_service.analyze(detected_face, list_faces)
 
                 tx, ty = x2 + 10, max(0, y1)
                 if analyzed_face is not None:
