@@ -8,16 +8,3 @@ export type Face = {
     created_at: string,
     updated_at: string
 }
-
-export type FacesResponse = {
-    faces: Face[],
-}
-
-export type CreateFaceRequest = {
-    name: string,
-    file: File,
-}
-
-export type updateFaceRequest = {
-    name: string,
-}

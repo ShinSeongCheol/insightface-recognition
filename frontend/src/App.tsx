@@ -113,9 +113,12 @@ function App() {
             <main className="flex-1 p-4 sm:p-6 md:p-10">
                 <Routes>
                     <Route path="/" element={<Dashboard />} />
+
                     <Route path="/faces" element={<FacePage />} />
                     <Route path="/faces/:id" element={<FaceDetailPage />} />
                     <Route path="/faces/new" element={<RegisterPage />} />
+
+                    {/*  출입 기록  */}
                 </Routes>
             </main>
         </div>

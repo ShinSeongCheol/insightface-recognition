@@ -1,6 +1,6 @@
-import {fetchFaces} from "../api/faceListApi.ts";
 import {useEffect, useState} from "react";
-import type {Face} from "../api/types.ts";
+import type {Face} from "@/entities/face/api/types.ts";
+import {fetchFaceList} from "@/entities/face";
 
 export function useFaces() {
 
@@ -15,7 +15,7 @@ export function useFaces() {
             try {
                 setLoading(true);
 
-                const res = await fetchFaces();
+                const res = await fetchFaceList();
                 if (!ignore) {
                     setFaces(res.faces)
                 }
