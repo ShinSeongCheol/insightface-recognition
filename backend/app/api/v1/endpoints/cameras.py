@@ -22,6 +22,6 @@ async def read_stream(request: Request, db:Session = Depends(async_get_db)):
     insightface_service = request.app.state.insightface_service
 
     return StreamingResponse(
-        camera_service.generate_image(insightface_service, db),
+        camera_service.stream(),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )

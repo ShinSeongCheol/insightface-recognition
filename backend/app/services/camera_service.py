@@ -32,6 +32,23 @@ class CameraService:
     def read(self) -> np.ndarray:
         return self.frame
 
+    def stream(self):
+        while True:
+            # 1. 버퍼가 비어있으면 준비될 때까지 대기 (CPU 과부하 방지)
+            if self.processed_buffer is None:
+                time.sleep(0.1)
+                continue
+
+            # 2. 이미 인코딩된 바이트 데이터를 그대로 송출
+            yield (
+                    b"--frame\r\n"
+                    b"Content-Type: image/jpeg\r\n\r\n" + self.processed_buffer + b"\r\n"
+            )
+
+            # 3. 전송 속도 조절 (약 25~30 FPS)
+            # 이 코드가 없으면 무한 루프가 너무 빨리 돌아 CPU 점유율이 올라갑니다.
+            time.sleep(0.03)
+
     def loop(self):
         rtsp_url = "rtsp://192.168.0.11:554/profile3/media.smp"
         cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
@@ -89,7 +106,7 @@ class CameraService:
             # --- 이미지 인코딩 ---
             ok, buffer = cv2.imencode(".jpg", result_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
             if ok:
-                self.processed_buffer = buffer.tobytes()  # 👈 최종 결과물을 바이트로 저장
+                self.processed_buffer = buffer.tobytes()
 
             # --- 사진 저장 로직 ---
             current_time = time.time()
