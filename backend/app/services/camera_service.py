@@ -16,6 +16,8 @@ class CameraService:
         self.thread = None
         self.frame = None
 
+        self.last_capture_time = time.time()
+
     def start(self):
         self.running = True
         self.thread = Thread(target=self.loop, args=(), daemon=True)
@@ -43,70 +45,59 @@ class CameraService:
         target_fps = 10
         interval = 1.0 / target_fps
         capture_interval = 10
-        last_capture_time = time.time()
 
-        analyzed_face = None
-
-        # 등록된 얼굴 조회
         face_repository = FaceRepository(db)
         list_faces = face_repository.list_faces()
-
         access_log_repository = AccessLogRepository(db)
 
         while True:
             t0 = time.time()
-
-            frame: np.ndarray = self.read()
+            frame = self.read()
             if frame is None:
                 time.sleep(0.05)
                 continue
 
-            detected_faces = insightface_service.detect(frame)  # 리스트라고 가정
+            detected_faces = insightface_service.detect(frame)
             result_frame = frame.copy()
 
-            # 박스 경계 표시
+            # 현재 프레임에서 식별된 ID들을 담을 리스트
+            current_frame_face_ids = []
+
             for detected_face in detected_faces:
                 box = detected_face.bbox.astype(np.int32)
                 x1, y1, x2, y2 = map(int, box)
 
-                # 얼굴 분석
                 analyzed_face = insightface_service.analyze(detected_face, list_faces)
 
-                tx, ty = x2 + 10, max(0, y1)
                 if analyzed_face is not None:
-                    best_name = analyzed_face.name
-                    cv2.rectangle(result_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                    result_frame = draw_korean_text_bgr(bgr=result_frame, text=str(best_name), org=(tx, ty), font_size=50, color_bgr=(0,255,0))
+                    current_frame_face_ids.append(analyzed_face.id)
+                    color = (0, 255, 0)  # Green
+                    name = analyzed_face.name
                 else:
-                    best_name = "신원 미상"
-                    cv2.rectangle(result_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
-                    result_frame = draw_korean_text_bgr(bgr=result_frame, text=str(best_name), org=(tx, ty), font_size=50, color_bgr=(0,0,255))
+                    current_frame_face_ids.append(None)
+                    color = (0, 0, 255)  # Red
+                    name = "신원 미상"
 
+                cv2.rectangle(result_frame, (x1, y1), (x2, y2), color, 2)
+                result_frame = draw_korean_text_bgr(bgr=result_frame, text=str(name), org=(x2 + 10, max(0, y1)),
+                                                    font_size=50, color_bgr=color)
 
             ok, buffer = cv2.imencode(".jpg", result_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+            if not ok: continue
 
-            if not ok:
-                time.sleep(0.05)
-                continue
+            # --- 저장 로직 개선 ---
+            current_time = time.time()
+            if len(detected_faces) > 0 and (current_time - self.last_capture_time > capture_interval):
+                saved_image_path = capture_image(buffer)
 
-            # 사진 저장
-            if len(detected_faces) > 0:
-                current_time = time.time()
-                elapsed_time = current_time - last_capture_time
+                # 감지된 모든 얼굴에 대해 로그를 남김
+                for f_id in current_frame_face_ids:
+                    access_log_repository.save(f_id, str(saved_image_path))
 
-                if elapsed_time > capture_interval:
-                    saved_image_path = capture_image(buffer)
+                self.last_capture_time = current_time
+                print(f"📸 {datetime.datetime.now()} {len(current_frame_face_ids)}명의 로그 저장 완료!")
 
-                    face_id = analyzed_face.id if analyzed_face else None
-                    access_log_repository.save(face_id, str(saved_image_path))
-
-                    last_capture_time = current_time
-                    print(f"📸 {datetime.datetime.now()} 사진이 저장되었습니다! (간격: {capture_interval}초)")
-
-            yield (
-                    b"--frame\r\n"
-                    b"Content-Type: image/jpeg\r\n\r\n" + buffer.tobytes() + b"\r\n"
-            )
+            yield b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + buffer.tobytes() + b"\r\n"
 
             # FPS 제한
             dt = time.time() - t0
