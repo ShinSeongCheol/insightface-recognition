@@ -4,12 +4,12 @@ import {fetchSnapshotList} from "@/entities/snapshot";
 
 export const useSnapshotAlbum = () => {
     const [snapshots, setSnapshots] = useState<Snapshot[]>([])
+    const [selectedImage, setSelectedImage] = useState<string|null>()
 
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         let ignore = false;
-
 
         async function fetchData() {
             try {
@@ -29,11 +29,16 @@ export const useSnapshotAlbum = () => {
 
         fetchData().then();
 
+        const intervalId = setInterval(() => {
+            fetchData().then();
+        }, 600000);
+
         return () => {
             ignore = true;
+            clearInterval(intervalId);
         }
 
     }, []);
 
-    return {snapshots, loading}
+    return {snapshots, loading, selectedImage, setSelectedImage}
 }
