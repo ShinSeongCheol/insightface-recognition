@@ -1,22 +1,8 @@
-import {useEffect, useState} from "react";
+import {useCameraView} from "@/entities/model/useCameraView.ts";
 
 export const CameraView = () => {
-    const [hasError, setHasError] = useState(false);
-    const [retryKey, setRetryKey] = useState(0); // 재연결을 강제하기 위한 키
 
-    const streamUrl = `${import.meta.env.VITE_API_BASE_URL}/api/v1/cameras/stream`;
-
-    // 에러 발생 시 3초 후 재연결 시도
-    useEffect(() => {
-        let timer: number;
-        if (hasError) {
-            timer = window.setTimeout(() => {
-                setHasError(false);
-                setRetryKey(prev => prev + 1);
-            }, 3000);
-        }
-        return () => clearTimeout(timer);
-    }, [hasError]);
+    const {hasError, setHasError, retryKey, streamUrl} = useCameraView()
 
     return (
         <div className="relative w-full h-dvh md:h-full overflow-hidden bg-black flex items-center justify-center">
