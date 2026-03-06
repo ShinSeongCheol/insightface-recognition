@@ -22,15 +22,15 @@ Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("--- 카메라 로딩 시작 ---")
-    camera_service = CameraService()
-    camera_service.start()
-
-    app.state.camera_service = camera_service
-
     print("--- AI 모델(InsightFace) 로딩 시작 ---")
     insightface_service = InsightfaceService()
     app.state.insightface_service = insightface_service
+
+    print("--- 카메라 로딩 시작 ---")
+    camera_service = CameraService(insightface_service)
+    camera_service.start()
+
+    app.state.camera_service = camera_service
 
     yield
     camera_service.stop()
