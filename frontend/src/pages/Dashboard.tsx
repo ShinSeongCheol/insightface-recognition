@@ -1,4 +1,4 @@
-import { CameraView } from "@/entities";
+import { CameraView } from "@/entities/camera";
 
 const Dashboard = () => {
     return (

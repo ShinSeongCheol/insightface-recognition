@@ -1,4 +1,4 @@
-import {useCameraView} from "@/entities/model/useCameraView.ts";
+import {useCameraView} from "@/entities/camera/model/useCameraView.ts";
 
 export const CameraView = () => {
 
