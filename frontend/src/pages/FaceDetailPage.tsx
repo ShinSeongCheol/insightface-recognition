@@ -1,8 +1,8 @@
-import {FaceDetail} from "@features/face";
+import {FaceDetailWidget} from "@/widgets/face";
 
 const FaceDetailPage = () => {
     return (
-        <FaceDetail/>
+        <FaceDetailWidget/>
     )
 };
 
