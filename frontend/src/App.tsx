@@ -1,14 +1,15 @@
 import {Routes, Route, Link, useLocation} from "react-router-dom";
 import { useState } from "react";
 import Dashboard from "./pages/Dashboard";
-// import FaceDetail from "./pages/FaceDetail";
 import RegisterPage from "./pages/RegisterPage";
 import FaceDetailPage from "@/pages/FaceDetailPage";
 import FacePage from "@/pages/FacePage.tsx";
+import {SnapshotPage} from "@/pages/SnapshotPage.tsx";
 
 const navItems = [
     { name: "홈", path: "/" },
     { name: "사용자 관리", path: "/faces" },
+    { name: "스냅샷", path: "/snapshots" },
 ];
 
 function NavLinks({pathname, onItemClick,}: {
@@ -119,6 +120,7 @@ function App() {
                     <Route path="/faces/new" element={<RegisterPage />} />
 
                     {/*  출입 기록  */}
+                    <Route path="/snapshots" element={<SnapshotPage />} />
                 </Routes>
             </main>
         </div>
