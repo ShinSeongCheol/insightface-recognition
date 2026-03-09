@@ -1,9 +1,8 @@
 import {useCameraView} from "@/entities/camera/model/useCameraView.ts";
 
-export const CameraView = () => {
-    const camId = 1;
+export const CameraView = ({camId, src} : {camId: number, src: string}) => {
     const { videoRef } = useCameraView({
-        src: `${import.meta.env.VITE_API_BASE_URL}/static/hls_output/1/index.m3u8`
+        src: src
     });
 
     return (
