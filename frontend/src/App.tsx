@@ -8,8 +8,8 @@ import {SnapshotPage} from "@/pages/SnapshotPage.tsx";
 
 const navItems = [
     { name: "홈", path: "/" },
-    { name: "사용자 관리", path: "/faces" },
     { name: "스냅샷", path: "/snapshots" },
+    { name: "사용자 관리", path: "/faces" },
 ];
 
 function NavLinks({pathname, onItemClick,}: {

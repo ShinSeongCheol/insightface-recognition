@@ -12,7 +12,7 @@ export const SnapshotAlbum = () => {
     }
 
     const sortedSnapshots = [...snapshots].sort((a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        b.id - a.id
     );
 
     const groupedLogs = sortedSnapshots.reduce((acc, snapshot) => {
