@@ -7,7 +7,7 @@ import FacePage from "@/pages/FacePage.tsx";
 import {SnapshotPage} from "@/pages/SnapshotPage.tsx";
 
 const navItems = [
-    { name: "홈", path: "/" },
+    { name: "대시보드", path: "/" },
     { name: "스냅샷", path: "/snapshots" },
     { name: "사용자 관리", path: "/faces" },
 ];
