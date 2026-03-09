@@ -21,28 +21,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 Base.metadata.create_all(bind=engine)
 
-
-def run_camera_worker(cam_id, rtsp_url):
-    from app.services.camera_process import CameraProcess
-    from services.insightface_service import InsightfaceService
-
-    ai_service = InsightfaceService()
-
-    worker = CameraProcess(cam_id, rtsp_url, ai_service)
-    worker.run()
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("--- AI 모델(InsightFace) 로딩 시작 ---")
     insightface_service = InsightfaceService()
     app.state.insightface_service = insightface_service
-
-    print("--- 카메라 프로세스 시작 ---")
-    p = mp.Process(target=run_camera_worker, args=(1, "rtsp://192.168.0.11:554/profile3/media.smp"), daemon=True)
-    p.start()
+    app.state.camera_processes = {}
 
     yield
-    p.terminate()
     del insightface_service
 
 app = FastAPI(lifespan=lifespan)
