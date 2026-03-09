@@ -1,26 +1,23 @@
 import {useCameraView} from "@/entities/camera/model/useCameraView.ts";
 
 export const CameraView = () => {
-
-    const {hasError, setHasError, retryKey, streamUrl} = useCameraView()
+    const camId = 1;
+    const { videoRef } = useCameraView({
+        src: `${import.meta.env.VITE_API_BASE_URL}/static/hls_output/1/index.m3u8`
+    });
 
     return (
         <div className="relative w-full h-dvh md:h-full overflow-hidden bg-black flex items-center justify-center">
-            {hasError ? (
-                <div className="text-center z-20">
-                    <p className="text-gray-400 mb-2">카메라 연결이 원활하지 않습니다.</p>
-                    <p className="text-sm text-gray-500 animate-pulse">잠시 후 다시 시도합니다...</p>
-                </div>
-            ) : (
-
-                <img
-                    key={retryKey}
-                    src={`${streamUrl}?t=${retryKey}`}
-                    alt="camera"
-                    className="absolute inset-0 w-full h-full object-contain"
-                    onError={() => setHasError(true)}
-                />
-            )}
+            <video
+                ref={videoRef}
+                muted
+                autoPlay
+                playsInline
+                className="object-cover"
+            />
+            <div className="absolute top-2 left-2 z-10 bg-black/50 px-2 py-1 rounded text-white text-[10px] backdrop-blur-sm">
+                CAM {camId}
+            </div>
         </div>
     );
 }
