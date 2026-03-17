@@ -2,10 +2,12 @@ import datetime
 import logging
 import os
 import queue
+import shutil
 import subprocess
 import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 import cv2
@@ -68,16 +70,22 @@ class CameraProcess:
         self.last_log_at = 0.0
 
     def _get_ffmpeg_command(self):
-        out_dir = os.path.join("static", "hls_output", str(self.cam_id))
+        out_dir = os.path.join("app/static", "hls_output", str(self.cam_id))
+
+        path = Path(out_dir)
+        if path.is_dir():
+            shutil.rmtree(path)
+
         os.makedirs(out_dir, exist_ok=True)
         out_path = os.path.join(out_dir, "index.m3u8")
 
         return [
             self.ffmpeg,
             "-hide_banner",
-            "-loglevel", "error",
+            "-loglevel", "debug",
             "-y",
-
+            '-thread_queue_size', '1024',
+            
             "-f", "rawvideo",
             "-pix_fmt", "bgr24",
             "-s", f"{self.width}x{self.height}",
@@ -85,12 +93,14 @@ class CameraProcess:
             "-i", "-",
 
             "-an",  # rawvideo라 오디오 없음
-            "-c:v", "libx264",
-            "-preset", "ultrafast",
-            "-tune", "zerolatency",
+            "-c:v", "h264_nvenc",
+            "-preset", "p1",
+            "-tune", "ll",
+            "-zerolatency", "1",
+            "-rc", "vbr",
+            "-cq", "24",
             "-pix_fmt", "yuv420p",
-            "-profile:v", "baseline",
-            "-level", "3.1",
+            "-profile:v", "main",
 
             # HLS 세그먼트 경계 안정화
             "-g", str(self.fps),
@@ -101,6 +111,7 @@ class CameraProcess:
             "-hls_time", str(self.hls_time),
             "-hls_list_size", str(self.hls_list_size),
             "-hls_flags", "delete_segments+append_list+independent_segments+omit_endlist",
+            "-hls_segment_type", "mpegts",
             out_path,
         ]
 

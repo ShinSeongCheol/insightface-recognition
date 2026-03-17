@@ -5,7 +5,7 @@ from datetime import datetime
 
 def capture_image(buffer: np.ndarray):
     today_date = datetime.now().strftime("%Y-%m-%d")
-    save_dir = Path(f"static/captures/{today_date}")
+    save_dir = Path(f"app/static/captures/{today_date}")
     save_dir.mkdir(parents=True, exist_ok=True)
     file_name = uuid4()
     file_path = save_dir / f"{file_name}.jpg"

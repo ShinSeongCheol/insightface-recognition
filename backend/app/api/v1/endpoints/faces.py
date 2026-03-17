@@ -13,7 +13,7 @@ from uuid import uuid4
 
 from app.services.face_service import FaceService
 
-UPLOAD_DIR = "static/uploads/faces"
+UPLOAD_DIR = "app/static/uploads/faces"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 router = APIRouter()

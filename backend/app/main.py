@@ -15,7 +15,7 @@ env_path = BASE_DIR / ".env"
 load_dotenv(dotenv_path= env_path, verbose=True)
 
 from app.api.v1.api import api_router
-from services.insightface_service import InsightfaceService
+from app.services.insightface_service import InsightfaceService
 from app.db.session import engine, Base
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -24,16 +24,16 @@ Base.metadata.create_all(bind=engine)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("--- AI 모델(InsightFace) 로딩 시작 ---")
-    insightface_service = InsightfaceService()
-    app.state.insightface_service = insightface_service
+    # insightface_service = InsightfaceService()
+    # app.state.insightface_service = insightface_service
     app.state.camera_processes = {}
 
     yield
-    del insightface_service
+    # del insightface_service
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(api_router, prefix="/api/v1")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
