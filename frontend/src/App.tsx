@@ -5,11 +5,13 @@ import RegisterPage from "./pages/RegisterPage";
 import FaceDetailPage from "@/pages/FaceDetailPage";
 import FacePage from "@/pages/FacePage.tsx";
 import {SnapshotPage} from "@/pages/SnapshotPage.tsx";
+import {CameraPage, NewCameraPage} from "@/pages/camera";
 
 const navItems = [
     { name: "대시보드", path: "/" },
     { name: "스냅샷", path: "/snapshots" },
     { name: "사용자 관리", path: "/faces" },
+    { name: "카메라 관리", path: "/cameras" },
 ];
 
 function NavLinks({pathname, onItemClick,}: {
@@ -41,9 +43,9 @@ function App() {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     return (
-        <div className="min-h-screen bg-gray-50 md:flex">
+        <div className="min-h-screen bg-gray-50 xl:flex">
             {/* 모바일 상단 헤더 */}
-            <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-200">
+            <header className="xl:hidden sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-200">
                 <div className="flex items-center justify-between px-4 py-3">
                     <button
                         type="button"
@@ -60,15 +62,13 @@ function App() {
                         </svg>
                     </button>
 
-                    <span className="text-lg font-black text-blue-600">Face AI 🤖</span>
-
                     {/* 오른쪽 여백(정렬용) */}
                     <div className="w-10" />
                 </div>
             </header>
 
             {/* 데스크톱 사이드바 */}
-            <aside className="hidden md:block md:w-64 bg-white border-r border-gray-200">
+            <aside className="hidden xl:block xl:w-64 bg-white border-r border-gray-200">
                 <div className="p-6">
                     <span className="text-xl font-black text-blue-600">Face AI 🤖</span>
                 </div>
@@ -77,7 +77,7 @@ function App() {
 
             {/* 모바일 오버레이 + 드로어 */}
             {mobileOpen && (
-                <div className="md:hidden fixed inset-0 z-50">
+                <div className="xl:hidden fixed inset-0 z-50">
                     {/* 배경 오버레이 */}
                     <div
                         className="absolute inset-0 bg-black/40"
@@ -121,6 +121,8 @@ function App() {
 
                     {/*  출입 기록  */}
                     <Route path="/snapshots" element={<SnapshotPage />} />
+                    <Route path="/cameras" element={<CameraPage />} />
+                    <Route path="/cameras/new" element={<NewCameraPage />} />
                 </Routes>
             </main>
         </div>

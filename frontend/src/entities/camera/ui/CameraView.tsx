@@ -6,7 +6,7 @@ export const CameraView = ({camId, src} : {camId: number, src: string}) => {
     });
 
     return (
-        <div className="relative w-full h-dvh md:h-full overflow-hidden bg-black flex items-center justify-center">
+        <div className="relative w-full h-full overflow-hidden bg-black flex items-center justify-center">
             <video
                 ref={videoRef}
                 muted

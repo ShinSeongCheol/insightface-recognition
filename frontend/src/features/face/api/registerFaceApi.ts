@@ -1,5 +1,6 @@
-import type {CreateFaceRequest, Face} from "./types.ts";
+import type {CreateFaceRequest} from "./types.ts";
 import {httpClient} from "@shared/api/httpClient.ts";
+import type {Face} from "@/entities/face/api/types.ts";
 
 export async function registerFace(data:CreateFaceRequest): Promise<Face> {
     const formData = new FormData();
