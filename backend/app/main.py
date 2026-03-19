@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(api_router, prefix="/api/v1")
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/app/static", StaticFiles(directory="app/static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
