@@ -1,17 +1,14 @@
-from fastapi import APIRouter, Request, Response, Depends, HTTPException
-from fastapi.responses import StreamingResponse
-import numpy as np
-import cv2
+from fastapi import APIRouter, Request, Depends, HTTPException
 import multiprocessing as mp
 from sqlalchemy.orm import Session
 
 from app.db.session import async_get_db
-from app.services.camera_service import CameraService
+from app.api.v1.camera.camera_service import CameraService
 
 
 def run_camera_worker(cam_id, rtsp_url):
     from app.services.camera_process import CameraProcess
-    from app.services.insightface_service import InsightfaceService
+    from app.api.v1.insightface.insightface_service import InsightfaceService
 
     ai_service = InsightfaceService()
 

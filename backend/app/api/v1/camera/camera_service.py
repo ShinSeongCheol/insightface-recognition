@@ -1,7 +1,5 @@
-from skimage.data import camera
+from app.api.v1.camera.camera_repository import CameraRepository
 
-from app.repositories.camera_repository import CameraRepository
-from app.models.camera import Camera
 
 class CameraService:
     def __init__(self, db):
@@ -17,10 +15,11 @@ class CameraService:
         return camera
 
     def insert_camera(self, data):
+        code = data['code']
         name = data['name']
         model = data['model']
         location = data['location']
-        rtsp = data['rtsp']
+        rtsp = data['rtsp_url']
 
         camera = self.camera_repository.insert_camera(name=name, model=model, location=location, rtsp=rtsp)
         return camera

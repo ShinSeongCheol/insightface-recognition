@@ -1,7 +1,6 @@
-from skimage.data import camera
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import select
-from app.models.camera import Camera
+from app.api.v1.camera.camera_model import CameraModel
 
 class CameraRepository:
     def __init__(self, db):

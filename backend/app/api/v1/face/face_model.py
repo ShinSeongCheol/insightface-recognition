@@ -3,7 +3,7 @@ from sqlalchemy.sql import func
 from app.db.session import Base
 from pgvector.sqlalchemy import Vector
 
-class Face(Base):
+class FaceModel(Base):
     __tablename__ = "faces"
 
     id = Column(Integer, primary_key=True, index=True)

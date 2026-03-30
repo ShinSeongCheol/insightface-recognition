@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.session import async_get_db
-from app.services.snapshot_service import SnapshotService
+from app.api.v1.snapshot.snapshot_service import SnapshotService
 
 router = APIRouter()
 

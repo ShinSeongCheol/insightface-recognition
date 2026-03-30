@@ -1,4 +1,4 @@
-from app.repositories.snapshot_repository import SnapshotRepository
+from app.api.v1.snapshot.snapshot_repository import SnapshotRepository
 
 
 class SnapshotService:

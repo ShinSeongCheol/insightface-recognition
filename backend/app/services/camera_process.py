@@ -14,8 +14,8 @@ import cv2
 import numpy as np
 
 from app.db.session import SessionLocal
-from app.repositories.access_log_repository import AccessLogRepository
-from app.repositories.face_repository import FaceRepository
+from app.api.v1.snapshot.snapshot_repository import SnapshotRepository
+from app.api.v1.face.face_repository import FaceRepository
 from app.utils.draw import draw_korean_text_bgr
 from app.utils.files import capture_image
 
@@ -200,10 +200,10 @@ class CameraProcess:
                     continue
 
                 saved_image_path = capture_image(buffer)
-                access_log_repo = AccessLogRepository(db)
+                snapshot_repository = SnapshotRepository(db)
 
                 for face_id in face_ids:
-                    access_log_repo.save(face_id, str(saved_image_path))
+                    snapshot_repository.save(face_id, str(saved_image_path))
 
                 db.commit()
                 logger.info("[%s] access log saved at %s", self.cam_id, datetime.datetime.now())

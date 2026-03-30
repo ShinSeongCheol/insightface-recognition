@@ -1,5 +1,4 @@
 import uvicorn
-import multiprocessing as mp
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -15,21 +14,14 @@ env_path = BASE_DIR / ".env"
 load_dotenv(dotenv_path= env_path, verbose=True)
 
 from app.api.v1.api import api_router
-from app.services.insightface_service import InsightfaceService
-from app.db.session import engine, Base
+from app.api.v1.insightface.insightface_service import InsightfaceService
 from fastapi.middleware.cors import CORSMiddleware
-
-Base.metadata.create_all(bind=engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("--- AI 모델(InsightFace) 로딩 시작 ---")
-    # insightface_service = InsightfaceService()
-    # app.state.insightface_service = insightface_service
-    app.state.camera_processes = {}
-
+    app.state.insightface_service = InsightfaceService()
     yield
-    # del insightface_service
+    del app.state.insightface_service
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(api_router, prefix="/api/v1")
