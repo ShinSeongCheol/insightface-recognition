@@ -34,9 +34,11 @@ config.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from app.db.session import Base
-from app.api.v1.camera.camera_model import Camera
-from app.api.v1.face.face_model import Face
-from app.api.v1.snapshot.snapshot_model import Snapshot
+from app.api.v1.camera.camera_model import CameraModel
+from app.api.v1.face.face_model import FaceModel
+from app.api.v1.snapshot.snapshot_model import SnapshotModel
+from app.api.v1.mediaMtx.mediaMtx_model import MediaMtxModel
+from app.api.v1.stream.stream_model import StreamModel, StreamType
 
 target_metadata = Base.metadata
 

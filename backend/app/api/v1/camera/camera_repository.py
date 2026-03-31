@@ -1,36 +1,38 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import select
 from app.api.v1.camera.camera_model import CameraModel
+from app.api.v1.camera.camera_schema import CameraRequest
+
 
 class CameraRepository:
     def __init__(self, db):
         self.db: Session = db
 
     def list_cameras(self):
-        stmt = select(Camera)
+        stmt = select(CameraModel)
         result = self.db.execute(stmt).scalars().all()
         return result
 
     def select_camera(self, id):
-        stmt = select(Camera).where(Camera.id == id)
+        stmt = select(CameraModel).where(CameraModel.id == id)
         camera = self.db.execute(stmt).scalars().first()
         return camera
 
-    def insert_camera(self, name, model, location, rtsp):
-        camera = Camera(name=name, model_name=model, location=location, rtsp_url=rtsp)
+    async def insert_camera(self, camera: CameraRequest) -> CameraModel:
+        new_camera = CameraModel(**camera.model_dump())
         try:
-            self.db.add(camera)
+            self.db.add(new_camera)
             self.db.commit()
-            self.db.refresh(camera)
+            self.db.refresh(new_camera)
         except InterruptedError as e:
             self.db.rollback()
             raise e
 
-        return camera
+        return new_camera
 
     def update_camera(self, id, name, model, location, rtsp, is_active):
-        stmt = select(Camera).where(Camera.id == id)
-        camera: Camera = self.db.execute(stmt).scalars().first()
+        stmt = select(CameraModel).where(CameraModel.id == id)
+        camera: CameraModel = self.db.execute(stmt).scalars().first()
         camera.name = name
         camera.model_name = model
         camera.location = location

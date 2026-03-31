@@ -7,7 +7,7 @@ class CameraModel(Base):
     __tablename__ = "cameras"
 
     id = Column(Integer, primary_key=True, index=True) # camera id
-    code = Column(String, nullable=False, unique=True) # camera code
+    uuid = Column(String, nullable=False, unique=True) # camera uuid
     name = Column(String, nullable=False) # camera name
     model_name = Column(String) # camera model name
     location = Column(String) # camera location
