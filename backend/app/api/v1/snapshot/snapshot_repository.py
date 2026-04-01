@@ -7,18 +7,18 @@ class SnapshotRepository:
     def __init__(self, db):
         self.db = db
 
-    def list_snapshots(self):
-        stmt = select(Snapshot)
-        result = self.db.execute(stmt)
+    async def list_snapshots(self):
+        stmt = select(SnapshotModel)
+        result = await self.db.execute(stmt)
         snapshot_list = result.scalars().all()
         return snapshot_list
 
-    def save(self, face_id, image_path: str):
-        snapshot = Snapshot(face_id=face_id, image_path=image_path)
+    async def save(self, face_id, image_path: str):
+        snapshot = SnapshotModel(face_id=face_id, image_path=image_path)
         try:
             self.db.add(snapshot)
-            self.db.commit()
-            self.db.refresh(snapshot)
+            await self.db.commit()
+            await self.db.refresh(snapshot)
         except IntegrityError as e:
             self.db.rollback()
             raise e

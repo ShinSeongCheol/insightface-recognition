@@ -6,6 +6,6 @@ class SnapshotService:
         self.db = db
         self.snapshot_repository = SnapshotRepository(db)
 
-    def list_snapshots(self):
-        snapshots = self.snapshot_repository.list_snapshots()
+    async def list_snapshots(self):
+        snapshots = await self.snapshot_repository.list_snapshots()
         return snapshots

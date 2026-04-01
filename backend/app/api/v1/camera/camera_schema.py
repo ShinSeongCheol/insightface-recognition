@@ -14,4 +14,4 @@ class CameraRequest(CameraBase):
 
 class CameraResponse(CameraBase):
     id: int
-    uuid: str
+    uuid: UUID

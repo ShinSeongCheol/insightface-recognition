@@ -15,12 +15,12 @@ class CameraService:
         self.media_mtx_repository = MediaMtxRepository(db)
         self.stream_repository = StreamRepository(db)
 
-    def list_camera(self):
-        cameras = self.camera_repository.list_cameras()
+    async def list_camera(self):
+        cameras = await self.camera_repository.list_cameras()
         return cameras
 
-    def select_camera(self, id):
-        camera = self.camera_repository.select_camera(id)
+    async def select_camera(self, id):
+        camera = await self.camera_repository.select_camera(id)
         return camera
 
     async def insert_camera(self, camera_data: CameraRequest) -> CameraModel:

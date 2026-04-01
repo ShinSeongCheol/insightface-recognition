@@ -23,7 +23,7 @@ router = APIRouter()
 @router.get("/", response_model=Dict[str, List[CameraResponse]])
 async def list_cameras(db: Session = Depends(async_get_db)):
     camera_service = CameraService(db)
-    cameras = camera_service.list_camera()
+    cameras = await camera_service.list_camera()
 
     return {
         "cameras": cameras
@@ -45,9 +45,13 @@ async def delete_camera(request: Request, camera_id: int):
 
 @router.post("/{camera_id}/start")
 async def start_camera(request: Request, camera_id:int, db: Session = Depends(async_get_db)):
-    # mediaMTX에 CCTV 등록
-    camera_service = CameraService(db)
+    # RTSP 영상 수신 처리
+    # 얼굴 검출
+    # 얼굴 특징값 DB 비교
+    # 영상 처리
+    # media mtx 영상 송신
 
+    # camera_service = CameraService(db)
     pass
     # camera_processes = request.app.state.camera_processes
     #

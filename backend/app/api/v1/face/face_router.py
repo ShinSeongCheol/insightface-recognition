@@ -15,7 +15,7 @@ router = APIRouter()
 @router.get("/", response_model=Dict[str, List[FaceResponse]])
 async def faces(db: Session = Depends(async_get_db)):
     face_service = FaceService(db)
-    face_list = face_service.get_face_list()
+    face_list = await face_service.get_face_list()
 
     return {"faces":face_list}
 
@@ -34,14 +34,14 @@ async def update_face(face_id:int, body: Optional[dict] = Body(None), db: Sessio
     name = body.get('name')
 
     face_service = FaceService(db)
-    face = face_service.patch_face(face_id=face_id, name=name)
+    face = await face_service.patch_face(face_id=face_id, name=name)
 
     return face
 
 @router.get("/{face_id}", response_model=FaceResponse)
 async def get_face(face_id, db: Session = Depends(async_get_db)):
     face_service = FaceService(db)
-    face = face_service.get_face(face_id)
+    face = await face_service.get_face(face_id)
 
     if face is None:
         raise HTTPException(status_code=404, detail="등록된 얼굴이 없습니다.")
@@ -52,6 +52,6 @@ async def get_face(face_id, db: Session = Depends(async_get_db)):
 async def delete_face(face_id:int, db: Session = Depends(async_get_db)):
     face_service = FaceService(db)
 
-    face_service.delete_face(face_id)
+    await face_service.delete_face(face_id)
 
     return {"id": face_id}

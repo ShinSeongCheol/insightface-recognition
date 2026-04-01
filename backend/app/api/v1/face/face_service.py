@@ -17,11 +17,11 @@ class FaceService:
         self.insightface_service = insightface_service
         self.upload_dir = "app/static/uploads/faces"
 
-    def get_face_list(self):
+    async def get_face_list(self):
         face_list = self.face_repository.get_face_list()
         return face_list
 
-    def get_face(self, face_id):
+    async def get_face(self, face_id):
         face = self.face_repository.get_face(face_id)
         return face
 
@@ -68,14 +68,14 @@ class FaceService:
         except IntegrityError:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"이미 '{name}'이라는 이름으로 등록된 얼굴 정보가 있습니다.")
 
-    def patch_face(self, face_id, name):
+    async def patch_face(self, face_id, name):
         try:
             face = self.face_repository.patch_face(face_id, name)
             return face
         except IntegrityError:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"이미 '{name}'이라는 이름으로 등록된 얼굴 정보가 있습니다.")
 
-    def delete_face(self, face_id):
+    async def delete_face(self, face_id):
         face = self.get_face(face_id)
 
         # 파일 삭제

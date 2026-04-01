@@ -8,31 +8,33 @@ class CameraRepository:
     def __init__(self, db):
         self.db: Session = db
 
-    def list_cameras(self):
+    async def list_cameras(self):
         stmt = select(CameraModel)
-        result = self.db.execute(stmt).scalars().all()
-        return result
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
 
-    def select_camera(self, id):
+    async def select_camera(self, id):
         stmt = select(CameraModel).where(CameraModel.id == id)
-        camera = self.db.execute(stmt).scalars().first()
-        return camera
+        camera = await self.db.execute(stmt)
+        return camera.scalars().first()
 
     async def insert_camera(self, camera: CameraRequest) -> CameraModel:
         new_camera = CameraModel(**camera.model_dump())
         try:
             self.db.add(new_camera)
-            self.db.commit()
-            self.db.refresh(new_camera)
+            await self.db.commit()
+            await self.db.refresh(new_camera)
         except InterruptedError as e:
             self.db.rollback()
             raise e
 
         return new_camera
 
-    def update_camera(self, id, name, model, location, rtsp, is_active):
+    async def update_camera(self, id, name, model, location, rtsp, is_active):
         stmt = select(CameraModel).where(CameraModel.id == id)
-        camera: CameraModel = self.db.execute(stmt).scalars().first()
+        result = self.db.execute(stmt)
+
+        camera: CameraModel = result.scalars().first()
         camera.name = name
         camera.model_name = model
         camera.location = location
@@ -41,8 +43,8 @@ class CameraRepository:
 
         try:
             self.db.add(camera)
-            self.db.commit()
-            self.db.refresh(camera)
+            await self.db.commit()
+            await self.db.refresh(camera)
         except IntegrityError as e:
             self.db.rollback()
             raise e

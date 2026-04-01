@@ -10,7 +10,7 @@ router = APIRouter()
 async def faces(db: Session = Depends(async_get_db)):
 
     snapshot_service = SnapshotService(db)
-    snapshots = snapshot_service.list_snapshots()
+    snapshots = await snapshot_service.list_snapshots()
 
     data = [
         {

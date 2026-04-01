@@ -7,5 +7,5 @@ class MediaMtxRepository:
 
     async def getMediaMtx(self, media_mtx_id) -> MediaMtxModel:
         stmt = select(MediaMtxModel).where(MediaMtxModel.id == media_mtx_id)
-        media_mtx = self.db.execute(stmt).scalars().first()
-        return media_mtx
+        media_mtx = await self.db.execute(stmt)
+        return media_mtx.scalars().first()
