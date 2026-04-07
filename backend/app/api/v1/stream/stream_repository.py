@@ -1,3 +1,5 @@
+from typing import List
+
 from app.api.v1.stream.stream_model import StreamModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import Select
@@ -19,8 +21,8 @@ class StreamRepository:
             self.db.rollback()
             raise e
 
-    async def getStreamList(self):
+    async def getStreamList(self) -> List[StreamModel]:
         stmt = Select(StreamModel)
-        result = self.db.execute(stmt)
+        result = await self.db.execute(stmt)
         stream_list = result.scalars().all()
         return stream_list
