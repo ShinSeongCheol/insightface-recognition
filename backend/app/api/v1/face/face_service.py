@@ -18,11 +18,11 @@ class FaceService:
         self.upload_dir = "app/static/uploads/faces"
 
     async def get_face_list(self):
-        face_list = self.face_repository.get_face_list()
+        face_list = await self.face_repository.get_face_list()
         return face_list
 
     async def get_face(self, face_id):
-        face = self.face_repository.get_face(face_id)
+        face = await self.face_repository.get_face(face_id)
         return face
 
     async def post_face(self, name, file):
@@ -56,7 +56,7 @@ class FaceService:
             normalized_embedding=normalized_embedding
         )
         try:
-            face = self.face_repository.post_face(requested_face)
+            face = await self.face_repository.post_face(requested_face)
 
             # 이미지 저장
             os.makedirs(self.upload_dir, exist_ok=True)
@@ -70,16 +70,16 @@ class FaceService:
 
     async def patch_face(self, face_id, name):
         try:
-            face = self.face_repository.patch_face(face_id, name)
+            face = await self.face_repository.patch_face(face_id, name)
             return face
         except IntegrityError:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"이미 '{name}'이라는 이름으로 등록된 얼굴 정보가 있습니다.")
 
     async def delete_face(self, face_id):
-        face = self.get_face(face_id)
+        face = await self.get_face(face_id)
 
         # 파일 삭제
         image_path = face.image_path
         os.remove(image_path)
 
-        self.face_repository.delete_face(face)
+        await self.face_repository.delete_face(face)

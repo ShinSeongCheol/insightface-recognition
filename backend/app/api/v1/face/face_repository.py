@@ -9,39 +9,41 @@ class FaceRepository:
     def __init__(self, db):
         self.db = db
 
-    def get_face_list(self):
+    async def get_face_list(self):
         stmt = select(FaceModel)
-        result = self.db.execute(stmt)
+        result = await self.db.execute(stmt)
         faces = result.scalars().all()
         return faces
 
-    def get_face(self, face_id):
-        stmt = select(FaceModel).where(FaceModel.id == face_id)
-        face = self.db.execute(stmt).scalars().first()
+    async def get_face(self, face_id):
+        stmt = select(FaceModel).where(FaceModel.id == int(face_id))
+        result = await self.db.execute(stmt)
+        face = result.scalars().first()
         return face
 
-    def post_face(self, requested_face:FaceCreate) -> FaceModel:
+    async def post_face(self, requested_face:FaceCreate) -> FaceModel:
         face = FaceModel(**requested_face.model_dump())
 
         try:
             self.db.add(face)
-            self.db.commit()
-            self.db.refresh(face)
+            await self.db.commit()
+            await self.db.refresh(face)
             return face
 
         except IntegrityError as e:
             self.db.rollback()
             raise e
 
-    def patch_face(self, face_id, name):
-        stmt = select(FaceModel).where(FaceModel.id == face_id)
-        face = self.db.execute(stmt).scalars().first()
+    async def patch_face(self, face_id, name):
+        stmt = select(FaceModel).where(FaceModel.id == int(face_id))
+        result = await self.db.execute(stmt)
+        face = result.scalars().first()
         face.name = name
 
         try:
             self.db.add(face)
-            self.db.commit()
-            self.db.refresh(face)
+            await self.db.commit()
+            await self.db.refresh(face)
             return face
 
         except IntegrityError as e:
@@ -49,6 +51,6 @@ class FaceRepository:
             raise e
 
 
-    def delete_face(self, face: FaceModel):
-        self.db.delete(face)
-        self.db.commit()
+    async def delete_face(self, face: FaceModel):
+        await self.db.delete(face)
+        await self.db.commit()
