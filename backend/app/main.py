@@ -26,9 +26,9 @@ async def lifespan(app: FastAPI):
     insightface_service = InsightfaceService()
     app.state.insightface_service = insightface_service
     app.state.stream_service = StreamService(insightface_service, AsyncSessionLocal)
+    app.state.mediaMtx_service = MediaMtxService(session_factory=AsyncSessionLocal)
 
-    mediaMtx_service = MediaMtxService(session_factory=AsyncSessionLocal)
-    await mediaMtx_service.init()
+    await app.state.mediaMtx_service.init()
 
     await app.state.stream_service.init()
 

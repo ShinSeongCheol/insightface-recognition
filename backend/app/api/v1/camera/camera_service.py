@@ -25,46 +25,6 @@ class CameraService:
 
     async def insert_camera(self, camera_data: CameraRequest) -> CameraModel:
         camera = await self.camera_repository.insert_camera(camera_data)
-        media_mtx: MediaMtxModel = await self.media_mtx_repository.getMediaMtx(1)
-
-        async with httpx.AsyncClient() as client:
-            payload = {
-                "name": "original/" +  str(camera_data.uuid),
-                "source": camera.rtsp_url,
-                "sourceOnDemand": True
-            }
-
-            response = await client.post(
-                f"http://{media_mtx.ip}:{media_mtx.api_port}/v3/config/paths/add/original/{str(camera.uuid)}",
-                json=payload,
-                auth=("admin", "password")
-            )
-
-            if response.status_code == 200:
-                print('mediaMTX 등록 성공')
-                await self.stream_repository.insertStream(media_mtx_id=media_mtx.id, camera_id=camera.id, path_name="ORIGINAL")
-
-            else:
-                print(f'mediaMTX 등록 실패: {response.status_code} - {response.text}')
-
-            payload = {
-                "name": "analysis/" +  str(camera_data.uuid),
-                "source": "publisher",
-            }
-
-            response = await client.post(
-                f"http://{media_mtx.ip}:{media_mtx.api_port}/v3/config/paths/add/analysis/{str(camera.uuid)}",
-                json=payload,
-                auth=("admin", "password")
-            )
-
-            if response.status_code == 200:
-                print('mediaMTX 등록 성공')
-                await self.stream_repository.insertStream(media_mtx_id=media_mtx.id, camera_id=camera.id, path_name="ANALYSIS")
-
-            else:
-                print(f'mediaMTX 등록 실패: {response.status_code} - {response.text}')
-
         return camera
 
     def update_camera(self, id, name, model, location, rtsp, is_active):

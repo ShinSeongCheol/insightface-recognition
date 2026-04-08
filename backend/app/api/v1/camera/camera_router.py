@@ -5,6 +5,9 @@ import multiprocessing as mp
 from sqlalchemy.orm import Session
 
 from app.api.v1.camera.camera_schema import CameraResponse, CameraRequest
+from app.api.v1.mediaMtx import mediaMtx_service
+from app.api.v1.mediaMtx.mediaMtx_service import MediaMtxService
+from app.api.v1.stream.stream_service import StreamService
 from app.db.session import async_get_db
 from app.api.v1.camera.camera_service import CameraService
 
@@ -30,9 +33,15 @@ async def list_cameras(db: Session = Depends(async_get_db)):
     }
 
 @router.post("/", response_model=Dict[str, CameraResponse])
-async def insert_camera(camera_data: CameraRequest, db: Session = Depends(async_get_db)):
+async def insert_camera(request: Request, camera_data: CameraRequest, db: Session = Depends(async_get_db)):
+    mediaMtx_service:MediaMtxService = request.app.state.mediaMtx_service
+
     camera_service = CameraService(db)
     camera = await camera_service.insert_camera(camera_data)
+
+    await mediaMtx_service.start_original_stream(camera)
+    await mediaMtx_service.start_analysis_stream(camera)
+
     return {"data": camera}
 
 @router.patch("/{camera_id}")
@@ -51,7 +60,12 @@ async def start_camera(request: Request, camera_id:int, db: Session = Depends(as
     # 영상 처리
     # media mtx 영상 송신
 
-    # camera_service = CameraService(db)
+    insightface_service = app.state.insightface_service
+    camera_service = CameraService(db)
+    stream_service = StreamService(db)
+
+
+
     pass
     # camera_processes = request.app.state.camera_processes
     #
