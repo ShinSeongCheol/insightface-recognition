@@ -12,4 +12,4 @@ class StreamModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     media_mtx_id = Column(Integer, ForeignKey("media_mtx.id"))
     camera_id = Column(Integer, ForeignKey("cameras.id"))
-    path_name = Column(Enum(StreamType), unique=True, nullable=False)
+    path_name = Column(Enum(StreamType), nullable=False)
